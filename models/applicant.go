@@ -7,6 +7,7 @@ type Applicant struct {
 	EmploymentStatus string      `json:"employment_status"`
 	Sex			     string      `json:"sex"`
 	DateOfBirth      string      `json:"date_of_birth"`
+	Household       []Household  `json:"households"`
 }
 
 type Household struct {
