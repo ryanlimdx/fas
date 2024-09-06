@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"github.com/joho/godotenv"
+
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 )
 
 // SetupDB connects to the MySQL database, create the relevant tables and returns the database.
@@ -50,8 +51,10 @@ func createTables(db *sql.DB) {
 			id VARCHAR(36) PRIMARY KEY,
 			name VARCHAR(100),
 			employment_status VARCHAR(50),
+			marital_status VARCHAR(50),
 			sex VARCHAR(10),
-			date_of_birth DATE
+			date_of_birth DATE,
+			CONSTRAINT unique_name_dob_applicant UNIQUE (name, date_of_birth)
 		);`,
 
 		// Households table
@@ -64,7 +67,8 @@ func createTables(db *sql.DB) {
 			school_level VARCHAR(50),
 			employment_status VARCHAR(50),
 			date_of_birth DATE,
-			FOREIGN KEY (applicant_id) REFERENCES applicants(id) ON DELETE CASCADE
+			FOREIGN KEY (applicant_id) REFERENCES applicants(id) ON DELETE CASCADE,
+			CONSTRAINT unique_applicant_name_dob_household UNIQUE (applicant_id, name, date_of_birth)
 		);`,
 
 		// Schemes table
