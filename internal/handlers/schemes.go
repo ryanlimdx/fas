@@ -133,6 +133,7 @@ func GetSchemes(db *sql.DB) http.HandlerFunc {
 				http.Error(w, "Failed to retrieve criteria", http.StatusInternalServerError)
 				return
 			}
+
             // Fetch benefits
             scheme.Benefits, err = getBenefitsForScheme(db, scheme.ID)
             if err != nil {
@@ -196,7 +197,6 @@ func getBenefitsForScheme(db *sql.DB, schemeID string) ([]models.Benefit, error)
     return benefits, nil
 }
 
-
 // GetEligibleSchemes returns the schemes an applicant is eligible for
 func GetEligibleSchemes(db *sql.DB) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
@@ -219,8 +219,7 @@ func GetEligibleSchemes(db *sql.DB) http.HandlerFunc {
 
 // fetchEligibleSchemes queries the database for schemes an applicant is eligible for.
 func fetchEligibleSchemes(db *sql.DB, applicantID string) ([]models.Scheme, error) {
-    // Define the SQL query to find eligible schemes
-	query := `SELECT s.id, s.name
+    query := `SELECT s.id, s.name
 	FROM schemes s
 	LEFT JOIN (
 		SELECT sc.scheme_id
@@ -251,7 +250,8 @@ func fetchEligibleSchemes(db *sql.DB, applicantID string) ([]models.Scheme, erro
         return nil, err
     }
     defer rows.Close()
-	fmt.Println("Applicant:", applicantID)
+	
+    // Parse schemes that the applicant is eligible for.
     var schemes []models.Scheme
     for rows.Next() {
         var scheme models.Scheme

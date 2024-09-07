@@ -4,13 +4,13 @@ package models
 type Scheme struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
-	Criteria []Criteria `json:"criteria"`
-	Benefits []Benefit `json:"benefits"`
+	Criteria []Criteria `json:"criteria,omitempty"`
+	Benefits []Benefit `json:"benefits,omitempty"`
 }
 
 type Criteria struct {
 	ID	string `json:"id"`
-	CriteriaLevel string `json:"criteria_level"` // to specify applicant or their relationship (son/ daughter/ spouse)
+	CriteriaLevel string `json:"criteria_level"`
 	CriteriaType string `json:"criteria_type"`
 	Status string `json:"status"`
 }
