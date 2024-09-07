@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 )
@@ -74,7 +73,7 @@ func createTables(db *sql.DB) {
 		// Schemes table
 		`CREATE TABLE IF NOT EXISTS schemes (
 			id VARCHAR(36) PRIMARY KEY,
-			name VARCHAR(100)
+			name VARCHAR(100) UNIQUE
 		);`,
 
 		// Criteria table
@@ -82,7 +81,9 @@ func createTables(db *sql.DB) {
 			id VARCHAR(36) PRIMARY KEY,
 			criteria_level VARCHAR(50),
 			criteria_type VARCHAR(100),
-			status VARCHAR(50)
+			status VARCHAR(50),
+			CONSTRAINT unique_criteria UNIQUE (criteria_level, criteria_type, status)
+
 		);`,
 
 		// Scheme_Criteria table
@@ -98,7 +99,8 @@ func createTables(db *sql.DB) {
 		`CREATE TABLE IF NOT EXISTS benefits (
 			id VARCHAR(36) PRIMARY KEY,
 			name VARCHAR(100),
-			amount DECIMAL(10, 2)
+			amount DECIMAL(10, 2),
+			CONSTRAINT unique_benefits UNIQUE (name, amount)
 		);`,
 
 		// Scheme_Benefits table
@@ -118,7 +120,8 @@ func createTables(db *sql.DB) {
 			status VARCHAR(50),
 			applied_date DATE,
 			FOREIGN KEY (applicant_id) REFERENCES applicants(id) ON DELETE CASCADE,
-			FOREIGN KEY (scheme_id) REFERENCES schemes(id) ON DELETE CASCADE
+			FOREIGN KEY (scheme_id) REFERENCES schemes(id) ON DELETE CASCADE,
+			CONSTRAINT unique_applicant_scheme_application UNIQUE (applicant_id, scheme_id)
 		);`,
 	}
 

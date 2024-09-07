@@ -4,8 +4,8 @@ package models
 type Scheme struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
-	Criteria []Criteria `json:"criteria"`
-	Benefits []Benefit `json:"benefits"`
+	Criteria []Criteria `json:"criteria,omitempty"`
+	Benefits []Benefit `json:"benefits,omitempty"`
 }
 
 type Criteria struct {
