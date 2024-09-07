@@ -1,4 +1,4 @@
-# Project Name
+# Financial Assistance Scheme Management System
 
 Brief description of what the project does and who it's for.
 
