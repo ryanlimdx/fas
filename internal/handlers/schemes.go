@@ -106,3 +106,91 @@ func CreateScheme(db *sql.DB) http.HandlerFunc {
         json.NewEncoder(w).Encode(scheme)
     }
 }
+
+// GetSchemes retrieves all schemes from the database.
+func GetSchemes(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        // Query to select all schemes
+        rows, err := db.Query("SELECT id, name FROM schemes")
+        if err != nil {
+            http.Error(w, "Failed to retrieve schemes", http.StatusInternalServerError)
+            return
+        }
+        defer rows.Close()
+
+        var schemes []models.Scheme
+        for rows.Next() {
+            var scheme models.Scheme
+            if err := rows.Scan(&scheme.ID, &scheme.Name); err != nil {
+                http.Error(w, "Failed to scan scheme", http.StatusInternalServerError)
+                return
+            }
+
+            // Fetch criteria
+            scheme.Criteria, err = getCriteriaForScheme(db, scheme.ID)
+            if err != nil {
+				http.Error(w, "Failed to retrieve criteria", http.StatusInternalServerError)
+				return
+			}
+            // Fetch benefits
+            scheme.Benefits, err = getBenefitsForScheme(db, scheme.ID)
+            if err != nil {
+				http.Error(w, "Failed to retrieve benefits", http.StatusInternalServerError)
+				return
+			}
+
+            schemes = append(schemes, scheme)
+        }
+
+        if err := rows.Err(); err != nil {
+            http.Error(w, "Failed to read scheme data", http.StatusInternalServerError)
+            return
+        }
+
+        // Sending the retrieved schemes as a JSON array
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(schemes)
+    }
+}
+
+// getCriteriaForScheme retrieves all criteria for a scheme.
+func getCriteriaForScheme(db *sql.DB, schemeID string) ([]models.Criteria, error) {
+    var criteria []models.Criteria
+    rows, err := db.Query(`SELECT id, criteria_level, criteria_type, status FROM criteria 
+                            JOIN scheme_criteria ON criteria.id = scheme_criteria.criteria_id 
+                            WHERE scheme_criteria.scheme_id = ?`, schemeID)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    for rows.Next() {
+        var criterion models.Criteria
+        if err := rows.Scan(&criterion.ID, &criterion.CriteriaLevel, &criterion.CriteriaType, &criterion.Status); err != nil {
+            return nil, err
+        }
+        criteria = append(criteria, criterion)
+    }
+    return criteria, nil
+}
+
+// getBenefitsForScheme retrieves all benefits for a scheme.
+func getBenefitsForScheme(db *sql.DB, schemeID string) ([]models.Benefit, error) {
+    var benefits []models.Benefit
+    rows, err := db.Query(`SELECT id, name, amount FROM benefits 
+                            JOIN scheme_benefits ON benefits.id = scheme_benefits.benefit_id 
+                            WHERE scheme_benefits.scheme_id = ?`, schemeID)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    for rows.Next() {
+        var benefit models.Benefit
+        if err := rows.Scan(&benefit.ID, &benefit.Name, &benefit.Amount); err != nil {
+            return nil, err
+        }
+        benefits = append(benefits, benefit)
+    }
+    return benefits, nil
+}
