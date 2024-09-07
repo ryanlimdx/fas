@@ -70,3 +70,31 @@ func applicationExists(db *sql.DB, applicantID, schemeID string) bool {
     }
     return exists
 }
+
+// GetApplications retrieves all applications from the database.
+func GetApplications(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        rows, err := db.Query("SELECT id, applicant_id, scheme_id, status, applied_date FROM applications")
+        if err != nil {
+            http.Error(w, "Failed to retrieve applications", http.StatusInternalServerError)
+            return
+        }
+        defer rows.Close()
+
+        var applications []models.Application
+        for rows.Next() {
+            var application models.Application
+            if err := rows.Scan(&application.ID, &application.ApplicantID, &application.SchemeID, &application.Status, &application.AppliedDate); err != nil {
+                http.Error(w, "Failed to scan application", http.StatusInternalServerError)
+                return
+            }
+            applications = append(applications, application)
+        }
+        if err := rows.Err(); err != nil {
+            http.Error(w, "Failed to read application data", http.StatusInternalServerError)
+            return
+        }
+
+        json.NewEncoder(w).Encode(applications)
+    }
+}
