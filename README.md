@@ -1,6 +1,6 @@
 # Financial Assistance Scheme Management System
 
-Brief description of what the project does and who it's for.
+This is a backend application that will be part of a system to allow administrators to manage financial assistance schemes and applications for schemes.
 
 ## Prerequisites
 
