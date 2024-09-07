@@ -82,7 +82,9 @@ func createTables(db *sql.DB) {
 			id VARCHAR(36) PRIMARY KEY,
 			criteria_level VARCHAR(50),
 			criteria_type VARCHAR(100),
-			status VARCHAR(50)
+			status VARCHAR(50),
+			CONSTRAINT unique_criteria UNIQUE (criteria_level, criteria_type, status)
+
 		);`,
 
 		// Scheme_Criteria table
@@ -98,7 +100,8 @@ func createTables(db *sql.DB) {
 		`CREATE TABLE IF NOT EXISTS benefits (
 			id VARCHAR(36) PRIMARY KEY,
 			name VARCHAR(100),
-			amount DECIMAL(10, 2)
+			amount DECIMAL(10, 2),
+			CONSTRAINT unique_benefits UNIQUE (name, amount)
 		);`,
 
 		// Scheme_Benefits table
