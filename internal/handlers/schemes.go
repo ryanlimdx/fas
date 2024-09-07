@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
-    "fmt"
 	"github.com/google/uuid"
 	"fas/internal/utils"
 	"fas/internal/models"
@@ -258,7 +257,6 @@ func fetchEligibleSchemes(db *sql.DB, applicantID string) ([]models.Scheme, erro
         if err := rows.Scan(&scheme.ID, &scheme.Name); err != nil {
             return nil, err
         }
-		fmt.Println("Scheme:", scheme)
         schemes = append(schemes, scheme)
     }
 

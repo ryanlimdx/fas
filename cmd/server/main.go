@@ -2,12 +2,11 @@
 package main
 
 import (
-	"fas/internal/database"
-	"fas/internal/handlers"
 	"log"
 	"net/http"
-
 	"github.com/gorilla/mux"
+	"fas/internal/database"
+	"fas/internal/handlers"
 )
 
 func main() {

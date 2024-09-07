@@ -4,12 +4,11 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"fas/internal/models"
-	"fas/internal/utils"
 	"fmt"
 	"net/http"
-
 	"github.com/google/uuid"
+	"fas/internal/models"
+	"fas/internal/utils"
 )
 
 // CreateApplicant creates a new applicant in the database from the JSON input.

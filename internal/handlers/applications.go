@@ -3,12 +3,11 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"fas/internal/models"
-	"fas/internal/utils"
 	"net/http"
 	"time"
-
 	"github.com/google/uuid"
+    "fas/internal/models"
+	"fas/internal/utils"
 )
 
 // CreateApplication creates a new application in the database
