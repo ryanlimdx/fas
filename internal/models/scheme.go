@@ -10,7 +10,7 @@ type Scheme struct {
 
 type Criteria struct {
 	ID	string `json:"id"`
-	CriteriaLevel string `json:"criteria_level"`
+	CriteriaLevel string `json:"criteria_level"` // to specify applicant or their relationship (son/ daughter/ spouse)
 	CriteriaType string `json:"criteria_type"`
 	Status string `json:"status"`
 }

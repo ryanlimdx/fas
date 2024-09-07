@@ -31,7 +31,8 @@ func CreateApplicant(db *sql.DB) http.HandlerFunc {
 		// Insert the applicant
 		fmt.Println("Inserting applicant:", applicant)
 		applicant.ID = uuid.New().String()
-		_, err = tx.Exec(`INSERT INTO applicants (id, name, employment_status, marital_status, sex, date_of_birth) VALUES (?, ?, ?, ?, ?, ?)`, 
+		_, err = tx.Exec(`INSERT INTO applicants (id, name, employment_status, marital_status, sex, date_of_birth) 
+			VALUES (?, ?, ?, ?, ?, ?)`, 
 			applicant.ID, applicant.Name, applicant.EmploymentStatus, applicant.MaritalStatus, applicant.Sex, applicant.DateOfBirth)
 
 		if err != nil {
@@ -43,7 +44,8 @@ func CreateApplicant(db *sql.DB) http.HandlerFunc {
 		for _, member := range applicant.Household {
 			fmt.Println("Inserting household member:", member)
 			member.ID = uuid.New().String()
-			_, err = tx.Exec(`INSERT INTO household (id, applicant_id, name, relationship, sex, school_level, employment_status, date_of_birth) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+			_, err = tx.Exec(`INSERT INTO household (id, applicant_id, name, relationship, sex, school_level, employment_status, date_of_birth) 
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 				member.ID, applicant.ID, member.Name, member.Relationship, member.Sex, member.SchoolLevel, member.EmploymentStatus, member.DateOfBirth)
 			
 			if err != nil {
