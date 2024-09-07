@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+    "fmt"
 	"github.com/google/uuid"
 	"fas/internal/utils"
 	"fas/internal/models"
@@ -193,4 +194,73 @@ func getBenefitsForScheme(db *sql.DB, schemeID string) ([]models.Benefit, error)
         benefits = append(benefits, benefit)
     }
     return benefits, nil
+}
+
+
+// GetEligibleSchemes returns the schemes an applicant is eligible for
+func GetEligibleSchemes(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        applicantID := r.URL.Query().Get("applicant")
+        if applicantID == "" {
+            http.Error(w, "Applicant ID is required", http.StatusBadRequest)
+            return
+        }
+
+        schemes, err := fetchEligibleSchemes(db, applicantID)
+        if err != nil {
+            http.Error(w, "Error retrieving schemes", http.StatusInternalServerError)
+            return
+        }
+
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(schemes)
+    }
+}
+
+// fetchEligibleSchemes queries the database for schemes an applicant is eligible for.
+func fetchEligibleSchemes(db *sql.DB, applicantID string) ([]models.Scheme, error) {
+    // Define the SQL query to find eligible schemes
+	query := `SELECT s.id, s.name
+	FROM schemes s
+	LEFT JOIN (
+		SELECT sc.scheme_id
+		FROM scheme_criteria sc
+		JOIN criteria c ON sc.criteria_id = c.id
+		LEFT JOIN applicants a ON a.id = ?
+		LEFT JOIN household h ON h.applicant_id = a.id
+		WHERE (
+			(c.criteria_level = 'individual' AND c.criteria_type = 'employment_status' AND a.employment_status = c.status)
+			OR (c.criteria_level = 'individual' AND c.criteria_type = 'marital_status' AND a.marital_status = c.status)
+			OR (c.criteria_level = 'individual' AND c.criteria_type = 'has_children' AND EXISTS (
+				SELECT 1 FROM household WHERE applicant_id = a.id AND (relationship = 'son' OR relationship = 'daughter')
+			))
+			OR (c.criteria_level = 'household' AND c.criteria_type = 'school_level' AND h.school_level = c.status)
+			OR (c.criteria_level = 'household' AND c.criteria_type = 'employment_status' AND h.employment_status = c.status)
+		)
+		GROUP BY sc.scheme_id
+		HAVING COUNT(DISTINCT c.id) = (
+			SELECT COUNT(*) FROM scheme_criteria WHERE scheme_id = sc.scheme_id
+		)
+	) AS eligible_schemes ON s.id = eligible_schemes.scheme_id
+	WHERE eligible_schemes.scheme_id IS NOT NULL OR NOT EXISTS (
+		SELECT 1 FROM scheme_criteria WHERE scheme_id = s.id
+	)
+	`
+	rows, err := db.Query(query, applicantID)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+	fmt.Println("Applicant:", applicantID)
+    var schemes []models.Scheme
+    for rows.Next() {
+        var scheme models.Scheme
+        if err := rows.Scan(&scheme.ID, &scheme.Name); err != nil {
+            return nil, err
+        }
+		fmt.Println("Scheme:", scheme)
+        schemes = append(schemes, scheme)
+    }
+
+    return schemes, nil
 }
