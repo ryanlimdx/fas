@@ -74,7 +74,7 @@ func createTables(db *sql.DB) {
 		// Schemes table
 		`CREATE TABLE IF NOT EXISTS schemes (
 			id VARCHAR(36) PRIMARY KEY,
-			name VARCHAR(100)
+			name VARCHAR(100) UNIQUE
 		);`,
 
 		// Criteria table
@@ -118,7 +118,8 @@ func createTables(db *sql.DB) {
 			status VARCHAR(50),
 			applied_date DATE,
 			FOREIGN KEY (applicant_id) REFERENCES applicants(id) ON DELETE CASCADE,
-			FOREIGN KEY (scheme_id) REFERENCES schemes(id) ON DELETE CASCADE
+			FOREIGN KEY (scheme_id) REFERENCES schemes(id) ON DELETE CASCADE,
+			CONSTRAINT unique_applicant_scheme_application UNIQUE (applicant_id, scheme_id)
 		);`,
 	}
 

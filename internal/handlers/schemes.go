@@ -32,13 +32,13 @@ func CreateScheme(db *sql.DB) http.HandlerFunc {
         _, err = tx.Exec(`INSERT INTO schemes (id, name) VALUES (?, ?)`,
             scheme.ID, scheme.Name)
         if err != nil {
-            tx.Rollback()
-            http.Error(w, "Failed to create scheme", http.StatusInternalServerError)
+            utils.HandleInsertError(w, err, "scheme")
             return
         }
 
         // Criteria
-        for _, criteria := range scheme.Criteria {
+        for i := range scheme.Criteria {
+            criteria := &scheme.Criteria[i]
             // Check if the criteria already exists
             err = db.QueryRow(`SELECT id FROM criteria WHERE criteria_level = ? AND criteria_type = ? AND status = ?`,
                 criteria.CriteriaLevel, criteria.CriteriaType, criteria.Status).Scan(&criteria.ID)
@@ -67,7 +67,8 @@ func CreateScheme(db *sql.DB) http.HandlerFunc {
         }
 
         // Benefits
-        for _, benefit := range scheme.Benefits {
+        for i := range scheme.Benefits {
+            benefit := &scheme.Benefits[i]
             // Check if the benefit already exists
             err = db.QueryRow(`SELECT id FROM benefits WHERE name = ? AND amount = ?`,
                 benefit.Name, benefit.Amount).Scan(&benefit.ID)
