@@ -32,7 +32,7 @@ func main() {
 	r.HandleFunc("/api/applications", handlers.CreateApplication(db)).Methods(http.MethodPost)
 	r.HandleFunc("/api/applications", handlers.GetApplications(db)).Methods(http.MethodGet)
 
-	// r.HandleFunc("/api/schemes/eligible", handlers.GetEligibleSchemes(db)).Methods(http.MethodGet)
+	r.HandleFunc("/api/schemes/eligible", handlers.GetEligibleSchemes(db)).Methods(http.MethodGet)
 	
 	// Start server
 	log.Fatal(http.ListenAndServe(":8080", r))
