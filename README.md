@@ -70,3 +70,5 @@ http://localhost:8080/api/path
 ```
 
 Replace `/path` with actual endpoints to interact with the API.
+
+The documentation for the API endpoints are located [here](https://documenter.getpostman.com/view/38191594/2sAXjRWVTM#fa66d61e-4de5-4ec6-a4b8-dbcbc8727466).
