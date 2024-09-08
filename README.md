@@ -2,6 +2,8 @@
 
 This is a backend application that will be part of a system to allow administrators to manage financial assistance schemes and applications for schemes.
 
+The API documentation is located [here](https://documenter.getpostman.com/view/38191594/2sAXjRWVTM#fa66d61e-4de5-4ec6-a4b8-dbcbc8727466).
+
 ## Prerequisites
 
 Before you begin, ensure you have met the following requirements:
