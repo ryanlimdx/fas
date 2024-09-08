@@ -4,9 +4,11 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+    "fmt"
 	"net/http"
 	"time"
 	"github.com/google/uuid"
+    "github.com/gorilla/mux"
     "fas/internal/models"
 	"fas/internal/utils"
 )
@@ -98,3 +100,104 @@ func GetApplications(db *sql.DB) http.HandlerFunc {
         json.NewEncoder(w).Encode(applications)
     }
 }
+
+// UpdateApplication updates an existing application in the database.
+func UpdateApplication(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        // Validate the application
+        vars := mux.Vars(r)
+        applicationID := vars["id"]
+        if err := checkApplication(db, applicationID); err != nil {
+            http.Error(w, err.Error(), http.StatusBadRequest)
+            return
+        }
+
+        var application models.Application
+        if err := json.NewDecoder(r.Body).Decode(&application); err != nil {
+            http.Error(w, "Invalid input", http.StatusBadRequest)
+            return
+        }
+
+        // Begin transaction
+        tx, err := db.Begin()
+        if err != nil {
+            http.Error(w, "Failed to begin transaction", http.StatusInternalServerError)
+            return
+        }
+        defer tx.Rollback()
+
+        // Update the application
+        _, err = tx.Exec(`UPDATE applications SET applicant_id=?, scheme_id=?, status=?, applied_date=? WHERE id=?`,
+            application.ApplicantID, application.SchemeID, application.Status, application.AppliedDate, applicationID)
+        if err != nil {
+            http.Error(w, "Failed to update application", http.StatusInternalServerError)
+            return
+        }
+
+        // Commit the transaction
+        if err = tx.Commit(); err != nil {
+            http.Error(w, "Failed to commit", http.StatusInternalServerError)
+            return
+        }
+
+        w.WriteHeader(http.StatusNoContent)
+    }
+}
+
+// DeleteApplication deletes an application from the database.
+func DeleteApplication(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        // Validate the application
+        vars := mux.Vars(r)
+        applicationID := vars["id"]
+        if err := checkApplication(db, applicationID); err != nil {
+            http.Error(w, err.Error(), http.StatusBadRequest)
+            return
+        }
+
+        // Begin transaction
+        tx, err := db.Begin()
+        if err != nil {
+            http.Error(w, "Failed to begin transaction", http.StatusInternalServerError)
+            return
+        }
+        defer tx.Rollback()
+
+        // Delete the application
+        _, err = tx.Exec(`DELETE FROM applications WHERE id=?`, applicationID)
+        if err != nil {
+            http.Error(w, "Failed to delete application", http.StatusInternalServerError)
+            return
+        }
+
+        // Commit the transaction
+        if err = tx.Commit(); err != nil {
+            http.Error(w, "Failed to commit", http.StatusInternalServerError)
+            return
+        }
+
+        w.WriteHeader(http.StatusNoContent)
+    }
+}
+
+// checkApplication validates the UUID and checks if an application exists in the database.
+func checkApplication(db *sql.DB, applicationID string) error {
+    // Validate the UUID for security
+    if err := utils.ValidateUUID(applicationID); err != nil {
+        return fmt.Errorf("invalid UUID: %w", err)
+    }
+
+    // Check if the application exists
+    var exists bool
+    err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM applications WHERE id = ?)", applicationID).Scan(&exists)
+    if err != nil {
+        return fmt.Errorf("error checking application existence: %w", err)
+    }
+    if !exists {
+        return fmt.Errorf("application not found")
+    }
+
+    return nil
+}
+
+

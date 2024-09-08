@@ -39,12 +39,13 @@ func main() {
 		middleware.ValidateScheme(handlers.UpdateScheme(db)).ServeHTTP(w, r)
 	}).Methods(http.MethodPut)
 	r.HandleFunc("/api/schemes", handlers.GetSchemes(db)).Methods(http.MethodGet)
+	r.HandleFunc("/api/schemes/eligible", handlers.GetEligibleSchemes(db)).Methods(http.MethodGet)
 	r.HandleFunc("/api/schemes/{id}", handlers.DeleteScheme(db)).Methods(http.MethodDelete)
 	
 	r.HandleFunc("/api/applications", handlers.CreateApplication(db)).Methods(http.MethodPost)
 	r.HandleFunc("/api/applications", handlers.GetApplications(db)).Methods(http.MethodGet)
-
-	r.HandleFunc("/api/schemes/eligible", handlers.GetEligibleSchemes(db)).Methods(http.MethodGet)
+	r.HandleFunc("/api/applications/{id}", handlers.UpdateApplication(db)).Methods(http.MethodPut)
+	r.HandleFunc("/api/applications/{id}", handlers.DeleteApplication(db)).Methods(http.MethodDelete)
 	
 	// Start server
 	log.Fatal(http.ListenAndServe(":8080", r))
