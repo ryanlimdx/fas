@@ -21,6 +21,13 @@ Optionally, the following tool is useful to facilitate testing of API endpoints:
 Clone this repository to your local machine using:
 
 ```bash
+git clone https://github.com/ryanlimdx/fas.git
+cd fas
+```
+
+Note: This is only if you did not fork this repository. Otherwise, clone this repository to your local machine using:
+
+```bash
 git clone https://github.com/yourusername/yourprojectname.git
 cd yourprojectname
 ```
@@ -82,13 +89,17 @@ The documentation for the API endpoints are located [here](https://documenter.ge
 The database schema for the Financial Assistance Scheme Management System was designed with several considerations:
 
 1. Normalization, Referential Integrity and Data Consistency
-The schema is normalized to avoid data redundancy and ensure referential integrity. Foreign keys are used to maintain relationships between entities like applicants, schemes, criteria, benefits, and applications. These foreign keys enforce referential integrity and ensure that cascading deletes maintain the integrity of data across related tables. Cascading deletes also automatically remove related records when a parent entity is deleted, thus preventing orphaned records and ensuring data consistency. 
+
+    The schema is normalized to avoid data redundancy and ensure referential integrity. Foreign keys are used to maintain relationships between entities like applicants, schemes, criteria, benefits, and applications. These foreign keys enforce referential integrity and ensure that cascading deletes maintain the integrity of data across related tables. Cascading deletes also automatically remove related records when a parent entity is deleted, thus preventing orphaned records and ensuring data consistency. 
 
 2. Primary and Unique Constraints
-Each table has a primary key for unique identification, and unique constraints are applied where necessary to avoid duplicate entries. For instance, in the applications table, the combination of applicant_id and scheme_id is unique, preventing duplicate applications for the same scheme by the same applicant.
+
+    Each table has a primary key for unique identification, and unique constraints are applied where necessary to avoid duplicate entries. For instance, in the applications table, the combination of applicant_id and scheme_id is unique, preventing duplicate applications for the same scheme by the same applicant.
 
 3. Handling Complex Relationships
-Many-to-many relationships, such as those between schemes and criteria, are managed using join tables like scheme_criteria and scheme_benefits. This approach allows for flexibility in linking schemes to different criteria and benefits, while reducing duplicate entries for benefits and criterias.
+
+    Many-to-many relationships, such as those between schemes and criteria, are managed using join tables like scheme_criteria and scheme_benefits. This approach allows for flexibility in linking schemes to different criteria and benefits, while reducing duplicate entries for benefits and criterias.
 
 4. Scalability, Flexibility and Future-Proofing
-The use of UUIDs (VARCHAR(36)) for primary keys ensures scalability and global uniqueness across distributed systems. The schema is designed to allow for easy extension, supporting future requirements like new scheme benefits or eligibility criteria; The criteria table allows for flexible eligibility conditions by storing a combination of criteria_level, criteria_type, and status. This makes it easier to extend the system in the future without modifying the schema, ensuring that schemes can evolve without the need for structural changes to the database.
+
+    The use of UUIDs (VARCHAR(36)) for primary keys ensures scalability and global uniqueness across distributed systems. The schema is designed to allow for easy extension, supporting future requirements like new scheme benefits or eligibility criteria; The criteria table allows for flexible eligibility conditions by storing a combination of criteria_level, criteria_type, and status. This makes it easier to extend the system in the future without modifying the schema, ensuring that schemes can evolve without the need for structural changes to the database.
