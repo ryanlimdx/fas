@@ -2,11 +2,12 @@
 package main
 
 import (
+	"fas/internal/database"
+	"fas/internal/handlers"
+	"fas/internal/middleware"
 	"log"
 	"net/http"
 	"github.com/gorilla/mux"
-	"fas/internal/database"
-	"fas/internal/handlers"
 )
 
 func main() {
@@ -22,10 +23,14 @@ func main() {
 	r := mux.NewRouter()
 	
 	// Routes (API Endpoints)
-	r.HandleFunc("/api/applicants", handlers.CreateApplicant(db)).Methods(http.MethodPost)
+	r.HandleFunc("/api/applicants", func(w http.ResponseWriter, r *http.Request) {
+		middleware.ValidateApplicant(handlers.CreateApplicant(db)).ServeHTTP(w, r)
+	}).Methods(http.MethodPost)
 	r.HandleFunc("/api/applicants", handlers.GetApplicants(db)).Methods(http.MethodGet)
 	
-	r.HandleFunc("/api/schemes", handlers.CreateScheme(db)).Methods(http.MethodPost)
+	r.HandleFunc("/api/schemes", func(w http.ResponseWriter, r *http.Request) {
+		middleware.ValidateScheme(handlers.CreateScheme(db)).ServeHTTP(w, r)
+	}).Methods(http.MethodPost)
 	r.HandleFunc("/api/schemes", handlers.GetSchemes(db)).Methods(http.MethodGet)
 	
 	r.HandleFunc("/api/applications", handlers.CreateApplication(db)).Methods(http.MethodPost)
