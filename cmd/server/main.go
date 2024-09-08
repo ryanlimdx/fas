@@ -39,7 +39,7 @@ func main() {
 		middleware.ValidateScheme(handlers.UpdateScheme(db)).ServeHTTP(w, r)
 	}).Methods(http.MethodPut)
 	r.HandleFunc("/api/schemes", handlers.GetSchemes(db)).Methods(http.MethodGet)
-	//r.HandleFunc("/api/schemes/{id}", handlers.DeleteScheme(db)).Methods(http.MethodDelete)
+	r.HandleFunc("/api/schemes/{id}", handlers.DeleteScheme(db)).Methods(http.MethodDelete)
 	
 	r.HandleFunc("/api/applications", handlers.CreateApplication(db)).Methods(http.MethodPost)
 	r.HandleFunc("/api/applications", handlers.GetApplications(db)).Methods(http.MethodGet)

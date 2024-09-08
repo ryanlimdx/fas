@@ -403,6 +403,52 @@ func UpdateScheme(db *sql.DB) http.HandlerFunc {
     }
 }
 
+// DeleteScheme removes a scheme from the database.
+func DeleteScheme(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        // Validate the scheme
+        vars := mux.Vars(r)
+        schemeID := vars["id"]
+        if err := checkScheme(db, schemeID); err != nil {
+            http.Error(w, err.Error(), http.StatusBadRequest)
+            return
+        }
+
+        // Begin transaction
+        tx, err := db.Begin()
+        if err != nil {
+            http.Error(w, "Failed to begin transaction", http.StatusInternalServerError)
+            return
+        }
+        defer tx.Rollback()
+
+        // Delete the scheme
+        _, err = tx.Exec(`DELETE FROM schemes WHERE id=?`, schemeID)
+        if err != nil {
+            http.Error(w, "Failed to delete scheme", http.StatusInternalServerError)
+            return
+        }
+
+        // Commit the transaction
+        if err := tx.Commit(); err != nil {
+            http.Error(w, "Failed to commit", http.StatusInternalServerError)
+            return
+        }
+
+        // Cleanup orphaned benefits and criteria
+        if err := deleteOrphanedBenefits(db); err != nil {
+            http.Error(w, "Failed to delete unused benefits", http.StatusInternalServerError)
+            return
+        }
+        if err := deleteOrphanedCriteria(db); err != nil {
+            http.Error(w, "Failed to delete unused criteria", http.StatusInternalServerError)
+            return
+        }
+
+        w.WriteHeader(http.StatusNoContent)
+    }
+}
+
 // checkScheme validates the UUID and checks if a scheme exists.
 func checkScheme(db *sql.DB, schemeID string) error {
     // Validate the UUID for security
