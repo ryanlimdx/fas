@@ -1,4 +1,4 @@
-// Contains common utils.
+// Contains basic error handling.
 package utils
 
 import (

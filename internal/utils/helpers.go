@@ -1,4 +1,4 @@
-// Contains helper functions
+// Contains helper functions.
 package utils
 
 import (

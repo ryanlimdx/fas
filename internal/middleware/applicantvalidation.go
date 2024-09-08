@@ -1,4 +1,4 @@
-// Handles applicant validation
+// Handles applicant validation.
 package middleware
 
 import (
@@ -34,7 +34,7 @@ func ValidateApplicant(next http.Handler) http.Handler {
             return
         }
 
-		// Validate the applicant
+		// Validate the applicant's fields
         if !utils.IsValid(validEmploymentStatus, applicant.EmploymentStatus) {
             http.Error(w, "Invalid employment status, " + 
                 utils.FormatValidOptions(validEmploymentStatus), http.StatusBadRequest)
@@ -51,7 +51,7 @@ func ValidateApplicant(next http.Handler) http.Handler {
             return
         }
 
-        // Validate household member(s)
+        // Validate household member(s) fields
         for _, member := range applicant.Household {
             if !utils.IsValid(validRelationships, member.Relationship) {
                 http.Error(w, "Invalid household member relationship, " + 

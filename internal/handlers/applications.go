@@ -1,4 +1,4 @@
-// Handles all the requests related to applications
+// Handles all the requests related to applications.
 package handlers
 
 import (

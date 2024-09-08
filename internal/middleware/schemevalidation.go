@@ -1,3 +1,4 @@
+// Handles scheme validation.
 package middleware
 
 import (

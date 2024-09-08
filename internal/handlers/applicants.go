@@ -1,4 +1,4 @@
-// Handles all the requests related to applicants
+// Handles all the requests related to applicants.
 package handlers
 
 import (
@@ -17,7 +17,6 @@ import (
 // GetApplicants retrieves all applicants from the database, returning them in JSON format.
 func GetApplicants(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Query the database for all applicants
 		rows, err := db.Query(`
 			SELECT id, name, employment_status, marital_status, sex, date_of_birth 
 			FROM applicants
@@ -61,7 +60,6 @@ func GetApplicants(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Convert the list of applicants to JSON
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(applicants)
@@ -70,7 +68,6 @@ func GetApplicants(db *sql.DB) http.HandlerFunc {
 
 // getHouseholdMembers retrieves the household members for a given applicant ID
 func getHouseholdMembers(db *sql.DB, applicantID string) ([]models.Household, error) {
-	// Query the database for the applicant's household members
 	rows, err := db.Query(
 		`SELECT id, applicant_id, name, relationship, sex, school_level, employment_status, date_of_birth 
 		FROM household WHERE applicant_id = ?`, 
@@ -149,7 +146,6 @@ func CreateApplicant(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Respond with the created applicant
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(applicant)
 	}

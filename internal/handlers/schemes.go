@@ -1,4 +1,4 @@
-// Handles all the requests related to the schemes
+// Handles all the requests related to the schemes.
 package handlers
 
 import (
@@ -17,7 +17,6 @@ import (
 // GetSchemes retrieves all schemes from the database.
 func GetSchemes(db *sql.DB) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
-        // Query to select all schemes
         rows, err := db.Query("SELECT id, name FROM schemes")
         if err != nil {
             http.Error(w, "Failed to retrieve schemes", http.StatusInternalServerError)
@@ -55,7 +54,6 @@ func GetSchemes(db *sql.DB) http.HandlerFunc {
             return
         }
 
-        // Sending the retrieved schemes as a JSON array
         w.Header().Set("Content-Type", "application/json")
         json.NewEncoder(w).Encode(schemes)
     }
@@ -215,7 +213,7 @@ func CreateScheme(db *sql.DB) http.HandlerFunc {
             return
         }
 
-        // Criteria
+        // Insert and link criteria
         for i := range scheme.Criteria {
             err = insertAndLinkCriteria(tx, db, scheme.ID, &scheme.Criteria[i])
             if err != nil {
@@ -224,7 +222,7 @@ func CreateScheme(db *sql.DB) http.HandlerFunc {
             }
         }
 
-        // Benefits
+        // Insert and link benefits
         for i := range scheme.Benefits {
             err = insertAndLinkBenefits(tx, db, scheme.ID, &scheme.Benefits[i])
             if err != nil {
@@ -290,7 +288,7 @@ func UpdateScheme(db *sql.DB) http.HandlerFunc {
             return
         }
 
-        // Insert Criteria
+        // Insert and link criteria
         for i := range scheme.Criteria {
             err = insertAndLinkCriteria(tx, db, schemeID, &scheme.Criteria[i])
             if err != nil {
@@ -299,7 +297,7 @@ func UpdateScheme(db *sql.DB) http.HandlerFunc {
             }
         }
 
-        // Insert Benefits
+        // Insert and link benefits
         for i := range scheme.Benefits {
             err = insertAndLinkBenefits(tx, db, schemeID, &scheme.Benefits[i])
             if err != nil {

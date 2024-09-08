@@ -1,4 +1,4 @@
-// Database handles the setup and connection to the database
+// Database handles the setup and connection to the database.
 package database
 
 import (
