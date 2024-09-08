@@ -154,18 +154,17 @@ func getHouseholdMembers(db *sql.DB, applicantID string) ([]models.Household, er
 // UpdateApplicant updates an existing applicant and their household members in the database.
 func UpdateApplicant(db *sql.DB) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
-        var applicant models.Applicant
-        if err := json.NewDecoder(r.Body).Decode(&applicant); err != nil {
-            http.Error(w, "Invalid input", http.StatusBadRequest)
+		// Validate the applicant
+        vars := mux.Vars(r)
+        applicantID := vars["id"]
+        if err := checkApplicant(db, applicantID); err != nil {
+            http.Error(w, err.Error(), http.StatusBadRequest)
             return
         }
 
-        vars := mux.Vars(r)
-        applicantID := vars["id"]
-
-        // Validate the applicant
-        if err := checkApplicant(db, applicantID); err != nil {
-            http.Error(w, err.Error(), http.StatusBadRequest)
+		var applicant models.Applicant
+        if err := json.NewDecoder(r.Body).Decode(&applicant); err != nil {
+            http.Error(w, "Invalid input", http.StatusBadRequest)
             return
         }
 
@@ -216,10 +215,9 @@ func UpdateApplicant(db *sql.DB) http.HandlerFunc {
 // DeleteApplicant removes an applicant from the database.
 func DeleteApplicant(db *sql.DB) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
-        vars := mux.Vars(r)
-        applicantID := vars["id"]
-
         // Validate the applicant
+		vars := mux.Vars(r)
+        applicantID := vars["id"]
         if err := checkApplicant(db, applicantID); err != nil {
             http.Error(w, err.Error(), http.StatusBadRequest)
             return
