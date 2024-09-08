@@ -46,6 +46,14 @@ func ValidateScheme(next http.Handler) http.Handler {
             }
 		}
 
+		// Validate scheme benefits
+		for _, benefit := range scheme.Benefits {
+			if benefit.Amount < 0 {
+				http.Error(w, "Invalid benefit amount", http.StatusBadRequest)
+				return
+			}
+		}
+
 		r.Body = io.NopCloser(bytes.NewBuffer(body))
 		next.ServeHTTP(w, r)                       
 	})
