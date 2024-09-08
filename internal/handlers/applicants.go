@@ -163,17 +163,9 @@ func UpdateApplicant(db *sql.DB) http.HandlerFunc {
         vars := mux.Vars(r)
         applicantID := vars["id"]
 
-        // Validate the UUID for security
-        if err := utils.ValidateUUID(applicantID); err != nil {
+        // Validate the applicant
+        if err := checkApplicant(db, applicantID); err != nil {
             http.Error(w, err.Error(), http.StatusBadRequest)
-            return
-        }
-
-        // Check if applicant exist
-        var exists bool
-        err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM applicants WHERE id = ?)", applicantID).Scan(&exists)
-        if err != nil || !exists {
-            http.Error(w, "Applicant not found", http.StatusBadRequest)
             return
         }
 
@@ -227,17 +219,9 @@ func DeleteApplicant(db *sql.DB) http.HandlerFunc {
         vars := mux.Vars(r)
         applicantID := vars["id"]
 
-        // Validate the UUID for security
-        if err := utils.ValidateUUID(applicantID); err != nil {
+        // Validate the applicant
+        if err := checkApplicant(db, applicantID); err != nil {
             http.Error(w, err.Error(), http.StatusBadRequest)
-            return
-        }
-
-        // Check if applicant exist
-        var exists bool
-        err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM applicants WHERE id = ?)", applicantID).Scan(&exists)
-        if err != nil || !exists {
-            http.Error(w, "Applicant not found", http.StatusBadRequest)
             return
         }
 
@@ -265,4 +249,24 @@ func DeleteApplicant(db *sql.DB) http.HandlerFunc {
 
         w.WriteHeader(http.StatusNoContent)
     }
+}
+
+// checkApplicant validates the UUID and checks if an applicant exists in the database.
+func checkApplicant(db *sql.DB, applicantID string) error {
+    // Validate the UUID for security
+    if err := utils.ValidateUUID(applicantID); err != nil {
+        return fmt.Errorf("invalid UUID: %w", err)
+    }
+
+    // Check if the applicant exists
+    var exists bool
+    err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM applicants WHERE id = ?)", applicantID).Scan(&exists)
+    if err != nil {
+        return fmt.Errorf("error checking applicant existence: %w", err)
+    }
+    if !exists {
+        return fmt.Errorf("applicant not found")
+    }
+
+    return nil
 }
