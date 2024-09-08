@@ -162,7 +162,7 @@ func UpdateApplicant(db *sql.DB) http.HandlerFunc {
 
         vars := mux.Vars(r)
         applicantID := vars["id"]
-		
+
         // Validate the UUID for security
         if err := utils.ValidateUUID(applicantID); err != nil {
             http.Error(w, err.Error(), http.StatusBadRequest)
@@ -218,5 +218,51 @@ func UpdateApplicant(db *sql.DB) http.HandlerFunc {
         }
 
         w.WriteHeader(http.StatusNoContent)  // 204 No Content for successful PUT
+    }
+}
+
+// DeleteApplicant removes an applicant from the database.
+func DeleteApplicant(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        vars := mux.Vars(r)
+        applicantID := vars["id"]
+
+        // Validate the UUID for security
+        if err := utils.ValidateUUID(applicantID); err != nil {
+            http.Error(w, err.Error(), http.StatusBadRequest)
+            return
+        }
+
+        // Check if applicant exist
+        var exists bool
+        err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM applicants WHERE id = ?)", applicantID).Scan(&exists)
+        if err != nil || !exists {
+            http.Error(w, "Applicant not found", http.StatusBadRequest)
+            return
+        }
+
+		// Begin transaction
+        tx, err := db.Begin()
+        if err != nil {
+            http.Error(w, "Failed to begin transaction", http.StatusInternalServerError)
+            return
+        }
+        defer tx.Rollback()
+
+		// Delete the applicant
+        _, err = tx.Exec(`DELETE FROM applicants WHERE id=?`, applicantID)
+        if err != nil {
+            http.Error(w, "Failed to delete applicant", http.StatusInternalServerError)
+            return
+        }
+
+		// Commit the transaction
+        err = tx.Commit()
+        if err != nil {
+            http.Error(w, "Failed to commit", http.StatusInternalServerError)
+            return
+        }
+
+        w.WriteHeader(http.StatusNoContent)
     }
 }
