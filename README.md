@@ -40,7 +40,7 @@ Install all necessary dependencies to run the project:
 go mod tidy
 ```
 
-This command installs all the necessary Go modules as specified in `go.md`.
+This command installs all the necessary Go modules as specified in `go.mod`.
 
 ### Step 3: Environment Configuration
 
