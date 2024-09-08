@@ -200,11 +200,22 @@ func getBenefitsForScheme(db *sql.DB, schemeID string) ([]models.Benefit, error)
 func GetEligibleSchemes(db *sql.DB) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         applicantID := r.URL.Query().Get("applicant")
-        if applicantID == "" {
-            http.Error(w, "Applicant ID is required", http.StatusBadRequest)
+
+        // Validate the UUID for security
+        if err := utils.ValidateUUID(applicantID); err != nil {
+            http.Error(w, err.Error(), http.StatusBadRequest)
             return
         }
 
+        // Check if applicant exist
+        var exists bool
+        err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM applicants WHERE id = ?)", applicantID).Scan(&exists)
+        if err != nil || !exists {
+            http.Error(w, "Applicant not found", http.StatusBadRequest)
+            return
+        }
+
+        // Fetch schemes the applicant is eligible for
         schemes, err := fetchEligibleSchemes(db, applicantID)
         if err != nil {
             http.Error(w, "Error retrieving schemes", http.StatusInternalServerError)

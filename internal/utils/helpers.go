@@ -1,7 +1,10 @@
+// Contains helper functions
 package utils
 
 import (
+    "fmt"
 	"strings"
+    "github.com/google/uuid"
 )
 
 // Helper function to check if an existing value is valid.
@@ -12,4 +15,16 @@ func IsValid(validVals []string, value string) bool {
         }
     }
     return false
+}
+
+
+// ValidateUUID checks if the provided string is a valid UUID and not empty.
+func ValidateUUID(id string) (error) {
+    if id == "" {
+        return fmt.Errorf("ID is required")
+    }
+    if _, err := uuid.Parse(id); err != nil {
+        return fmt.Errorf("invalid ID format")
+    }
+    return nil
 }
