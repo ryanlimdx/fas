@@ -14,103 +14,6 @@ import (
 	"fas/internal/utils"
 )
 
-// CreateScheme creates a new scheme in the database.
-func CreateScheme(db *sql.DB) http.HandlerFunc {
-    return func(w http.ResponseWriter, r *http.Request) {
-        var scheme models.Scheme
-        if err := json.NewDecoder(r.Body).Decode(&scheme); err != nil {
-            http.Error(w, "Invalid input", http.StatusBadRequest)
-            return
-        }
-
-        // Begin transaction
-        tx, err := db.Begin()
-        if err != nil {
-            http.Error(w, "Failed to begin transaction", http.StatusInternalServerError)
-            return
-        }
-		defer tx.Rollback()
-
-        // Insert the scheme
-		scheme.ID = uuid.New().String()
-        _, err = tx.Exec(`INSERT INTO schemes (id, name) VALUES (?, ?)`,
-            scheme.ID, scheme.Name)
-        if err != nil {
-            utils.HandleInsertError(w, err, "scheme")
-            return
-        }
-
-        // Criteria
-        for i := range scheme.Criteria {
-            criteria := &scheme.Criteria[i]
-            // Check if the criteria already exists
-            err = db.QueryRow(`SELECT id FROM criteria WHERE criteria_level = ? AND criteria_type = ? AND status = ?`,
-                criteria.CriteriaLevel, criteria.CriteriaType, criteria.Status).Scan(&criteria.ID)
-            if err == sql.ErrNoRows {
-                // Criteria doesn't exist  (insert it)
-                criteria.ID = uuid.New().String()
-                _, err = tx.Exec(`INSERT INTO criteria (id, criteria_level, criteria_type, status) 
-                    VALUES (?, ?, ?, ?)`,
-                    criteria.ID, criteria.CriteriaLevel, criteria.CriteriaType, criteria.Status)
-                if err != nil {
-                    utils.HandleInsertError(w, err, "criteria")
-                    return
-                }
-            } else if err != nil {
-                http.Error(w, "Failed to check criteria", http.StatusInternalServerError)
-                return
-            }
-
-            // Link criteria to the scheme
-            _, err = tx.Exec(`INSERT INTO scheme_criteria (scheme_id, criteria_id) VALUES (?, ?)`,
-                scheme.ID, criteria.ID)
-            if err != nil {
-                http.Error(w, "Failed to link criteria to scheme", http.StatusInternalServerError)
-                return
-            }
-        }
-
-        // Benefits
-        for i := range scheme.Benefits {
-            benefit := &scheme.Benefits[i]
-            // Check if the benefit already exists
-            err = db.QueryRow(`SELECT id FROM benefits WHERE name = ? AND amount = ?`,
-                benefit.Name, benefit.Amount).Scan(&benefit.ID)
-            if err == sql.ErrNoRows {
-                // Benefit doesn't exist (insert it)
-                benefit.ID = uuid.New().String()
-                _, err = tx.Exec(`INSERT INTO benefits (id, name, amount) 
-                    VALUES (?, ?, ?)`,
-                    benefit.ID, benefit.Name, benefit.Amount)
-                if err != nil {
-					utils.HandleInsertError(w, err, "benefit")
-                    return
-                }
-            } else if err != nil {
-                http.Error(w, "Failed to check benefit", http.StatusInternalServerError)
-                return
-            }
-
-            // Link benefit to the scheme
-            _, err = tx.Exec(`INSERT INTO scheme_benefits (scheme_id, benefit_id) VALUES (?, ?)`,
-                scheme.ID, benefit.ID)
-            if err != nil {
-                http.Error(w, "Failed to link benefit to scheme", http.StatusInternalServerError)
-                return
-            }
-        }
-
-        // Commit the transaction
-        if err := tx.Commit(); err != nil {
-            http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
-            return
-        }
-
-        w.WriteHeader(http.StatusCreated)
-        json.NewEncoder(w).Encode(scheme)
-    }
-}
-
 // GetSchemes retrieves all schemes from the database.
 func GetSchemes(db *sql.DB) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
@@ -234,30 +137,38 @@ func GetEligibleSchemes(db *sql.DB) http.HandlerFunc {
 // fetchEligibleSchemes queries the database for schemes an applicant is eligible for.
 func fetchEligibleSchemes(db *sql.DB, applicantID string) ([]models.Scheme, error) {
     query := `SELECT s.id, s.name
-	FROM schemes s
-	LEFT JOIN (
-		SELECT sc.scheme_id
-		FROM scheme_criteria sc
-		JOIN criteria c ON sc.criteria_id = c.id
-		LEFT JOIN applicants a ON a.id = ?
-		LEFT JOIN household h ON h.applicant_id = a.id
-		WHERE (
-			(c.criteria_level = 'individual' AND c.criteria_type = 'employment_status' AND a.employment_status = c.status)
-			OR (c.criteria_level = 'individual' AND c.criteria_type = 'marital_status' AND a.marital_status = c.status)
-			OR (c.criteria_level = 'individual' AND c.criteria_type = 'has_children' AND EXISTS (
-				SELECT 1 FROM household WHERE applicant_id = a.id AND (relationship = 'son' OR relationship = 'daughter')
-			))
-			OR (c.criteria_level = 'household' AND c.criteria_type = 'school_level' AND h.school_level = c.status)
-			OR (c.criteria_level = 'household' AND c.criteria_type = 'employment_status' AND h.employment_status = c.status)
-		)
-		GROUP BY sc.scheme_id
-		HAVING COUNT(DISTINCT c.id) = (
-			SELECT COUNT(*) FROM scheme_criteria WHERE scheme_id = sc.scheme_id
-		)
-	) AS eligible_schemes ON s.id = eligible_schemes.scheme_id
-	WHERE eligible_schemes.scheme_id IS NOT NULL OR NOT EXISTS (
-		SELECT 1 FROM scheme_criteria WHERE scheme_id = s.id
-	)
+    FROM schemes s
+    LEFT JOIN (
+        SELECT sc.scheme_id
+        FROM scheme_criteria sc
+        JOIN criteria c ON sc.criteria_id = c.id
+        LEFT JOIN applicants a ON a.id = ?
+        LEFT JOIN household h ON h.applicant_id = a.id
+        WHERE (
+            (c.criteria_level = 'individual' AND c.criteria_type = 'employment_status' AND a.employment_status = c.status)
+            OR (c.criteria_level = 'individual' AND c.criteria_type = 'marital_status' AND a.marital_status = c.status)
+            OR (
+                c.criteria_level = 'individual' AND c.criteria_type = 'has_children' AND 
+                (
+                    (c.status = "true" AND EXISTS (
+                        SELECT 1 FROM household WHERE applicant_id = a.id AND (relationship = 'son' OR relationship = 'daughter')
+                    ))
+                    OR (c.status = "false" AND NOT EXISTS (
+                        SELECT 1 FROM household WHERE applicant_id = a.id AND (relationship = 'son' OR relationship = 'daughter')
+                    ))
+                )
+            )
+            OR (c.criteria_level = 'household' AND c.criteria_type = 'school_level' AND h.school_level = c.status)
+            OR (c.criteria_level = 'household' AND c.criteria_type = 'employment_status' AND h.employment_status = c.status)
+        )
+        GROUP BY sc.scheme_id
+        HAVING COUNT(DISTINCT c.id) = (
+            SELECT COUNT(*) FROM scheme_criteria WHERE scheme_id = sc.scheme_id
+        )
+    ) AS eligible_schemes ON s.id = eligible_schemes.scheme_id
+    WHERE eligible_schemes.scheme_id IS NOT NULL OR NOT EXISTS (
+        SELECT 1 FROM scheme_criteria WHERE scheme_id = s.id
+    )
 	`
 	rows, err := db.Query(query, applicantID)
     if err != nil {
@@ -276,6 +187,61 @@ func fetchEligibleSchemes(db *sql.DB, applicantID string) ([]models.Scheme, erro
     }
 
     return schemes, nil
+}
+
+// CreateScheme creates a new scheme in the database.
+func CreateScheme(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        var scheme models.Scheme
+        if err := json.NewDecoder(r.Body).Decode(&scheme); err != nil {
+            http.Error(w, "Invalid input", http.StatusBadRequest)
+            return
+        }
+
+        // Begin transaction
+        tx, err := db.Begin()
+        if err != nil {
+            http.Error(w, "Failed to begin transaction", http.StatusInternalServerError)
+            return
+        }
+		defer tx.Rollback()
+
+        // Insert the scheme
+		scheme.ID = uuid.New().String()
+        _, err = tx.Exec(`INSERT INTO schemes (id, name) VALUES (?, ?)`,
+            scheme.ID, scheme.Name)
+        if err != nil {
+            utils.HandleInsertError(w, err, "scheme")
+            return
+        }
+
+        // Criteria
+        for i := range scheme.Criteria {
+            err = insertAndLinkCriteria(tx, db, scheme.ID, &scheme.Criteria[i])
+            if err != nil {
+                http.Error(w, err.Error(), http.StatusInternalServerError)
+                return
+            }
+        }
+
+        // Benefits
+        for i := range scheme.Benefits {
+            err = insertAndLinkBenefits(tx, db, scheme.ID, &scheme.Benefits[i])
+            if err != nil {
+                http.Error(w, err.Error(), http.StatusInternalServerError)
+                return
+            }
+        }
+
+        // Commit the transaction
+        if err := tx.Commit(); err != nil {
+            http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
+            return
+        }
+
+        w.WriteHeader(http.StatusCreated)
+        json.NewEncoder(w).Encode(scheme)
+    }
 }
 
 // UpdateScheme updates an existing scheme.
@@ -326,60 +292,18 @@ func UpdateScheme(db *sql.DB) http.HandlerFunc {
 
         // Insert Criteria
         for i := range scheme.Criteria {
-            criteria := &scheme.Criteria[i]
-            // Check if the criteria already exists
-            err = db.QueryRow(`SELECT id FROM criteria WHERE criteria_level = ? AND criteria_type = ? AND status = ?`,
-                criteria.CriteriaLevel, criteria.CriteriaType, criteria.Status).Scan(&criteria.ID)
-            if err == sql.ErrNoRows {
-                // Criteria doesn't exist  (insert it)
-                criteria.ID = uuid.New().String()
-                _, err = tx.Exec(`INSERT INTO criteria (id, criteria_level, criteria_type, status) 
-                    VALUES (?, ?, ?, ?)`,
-                    criteria.ID, criteria.CriteriaLevel, criteria.CriteriaType, criteria.Status)
-                if err != nil {
-                    utils.HandleInsertError(w, err, "criteria")
-                    return
-                }
-            } else if err != nil {
-                http.Error(w, "Failed to check criteria", http.StatusInternalServerError)
-                return
-            }
-        
-            // Link criteria to the scheme
-            _, err = tx.Exec(`INSERT INTO scheme_criteria (scheme_id, criteria_id) VALUES (?, ?)`,
-                schemeID, criteria.ID)
+            err = insertAndLinkCriteria(tx, db, schemeID, &scheme.Criteria[i])
             if err != nil {
-                http.Error(w, "Failed to link criteria to scheme", http.StatusInternalServerError)
+                http.Error(w, err.Error(), http.StatusInternalServerError)
                 return
             }
         }
 
         // Insert Benefits
         for i := range scheme.Benefits {
-            benefit := &scheme.Benefits[i]
-            // Check if the benefit already exists
-            err = db.QueryRow(`SELECT id FROM benefits WHERE name = ? AND amount = ?`,
-                benefit.Name, benefit.Amount).Scan(&benefit.ID)
-            if err == sql.ErrNoRows {
-                // Benefit doesn't exist (insert it)
-                benefit.ID = uuid.New().String()
-                _, err = tx.Exec(`INSERT INTO benefits (id, name, amount) 
-                    VALUES (?, ?, ?)`,
-                    benefit.ID, benefit.Name, benefit.Amount)
-                if err != nil {
-                    utils.HandleInsertError(w, err, "benefit")
-                    return
-                }
-            } else if err != nil {
-                http.Error(w, "Failed to check benefit", http.StatusInternalServerError)
-                return
-            }
-        
-            // Link benefit to the scheme
-            _, err = tx.Exec(`INSERT INTO scheme_benefits (scheme_id, benefit_id) VALUES (?, ?)`,
-                schemeID, benefit.ID)
+            err = insertAndLinkBenefits(tx, db, schemeID, &scheme.Benefits[i])
             if err != nil {
-                http.Error(w, "Failed to link benefit to scheme", http.StatusInternalServerError)
+                http.Error(w, err.Error(), http.StatusInternalServerError)
                 return
             }
         }
@@ -402,6 +326,54 @@ func UpdateScheme(db *sql.DB) http.HandlerFunc {
 
         w.WriteHeader(http.StatusNoContent)
     }
+}
+
+// insertAndLinkCriteria inserts a criteria and links it to a scheme.
+func insertAndLinkCriteria(tx *sql.Tx, db *sql.DB, schemeID string, criteria *models.Criteria) error {
+    var err error
+    err = db.QueryRow(`SELECT id FROM criteria WHERE criteria_level = ? AND criteria_type = ? AND status = ?`,
+        criteria.CriteriaLevel, criteria.CriteriaType, criteria.Status).Scan(&criteria.ID)
+
+    if err == sql.ErrNoRows {
+        criteria.ID = uuid.New().String()
+        _, err = tx.Exec(`INSERT INTO criteria (id, criteria_level, criteria_type, status) VALUES (?, ?, ?, ?)`,
+            criteria.ID, criteria.CriteriaLevel, criteria.CriteriaType, criteria.Status)
+        if err != nil {
+            return fmt.Errorf("failed to insert criteria: %w", err)
+        }
+    } else if err != nil {
+        return fmt.Errorf("failed to check criteria: %w", err)
+    }
+
+    _, err = tx.Exec(`INSERT INTO scheme_criteria (scheme_id, criteria_id) VALUES (?, ?)`, schemeID, criteria.ID)
+    if err != nil {
+        return fmt.Errorf("failed to link criteria to scheme: %w", err)
+    }
+    return nil
+}
+
+// insertAndLinkBenefits inserts a benefit and links it to a scheme.
+func insertAndLinkBenefits(tx *sql.Tx, db *sql.DB, schemeID string, benefit *models.Benefit) error {
+    var err error
+    err = db.QueryRow(`SELECT id FROM benefits WHERE name = ? AND amount = ?`,
+        benefit.Name, benefit.Amount).Scan(&benefit.ID)
+
+    if err == sql.ErrNoRows {
+        benefit.ID = uuid.New().String()
+        _, err = tx.Exec(`INSERT INTO benefits (id, name, amount) VALUES (?, ?, ?)`,
+            benefit.ID, benefit.Name, benefit.Amount)
+        if err != nil {
+            return fmt.Errorf("failed to insert benefit: %w", err)
+        }
+    } else if err != nil {
+        return fmt.Errorf("failed to check benefit: %w", err)
+    }
+
+    _, err = tx.Exec(`INSERT INTO scheme_benefits (scheme_id, benefit_id) VALUES (?, ?)`, schemeID, benefit.ID)
+    if err != nil {
+        return fmt.Errorf("failed to link benefit to scheme: %w", err)
+    }
+    return nil
 }
 
 // DeleteScheme removes a scheme from the database.
