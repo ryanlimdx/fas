@@ -27,6 +27,7 @@ func main() {
 		middleware.ValidateApplicant(handlers.CreateApplicant(db)).ServeHTTP(w, r)
 	}).Methods(http.MethodPost)
 	r.HandleFunc("/api/applicants", handlers.GetApplicants(db)).Methods(http.MethodGet)
+	r.HandleFunc("/api/applicants/{id}", handlers.UpdateApplicant(db)).Methods("PUT")
 	
 	r.HandleFunc("/api/schemes", func(w http.ResponseWriter, r *http.Request) {
 		middleware.ValidateScheme(handlers.CreateScheme(db)).ServeHTTP(w, r)
