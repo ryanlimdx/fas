@@ -28,3 +28,8 @@ func ValidateUUID(id string) (error) {
     }
     return nil
 }
+
+// FormatValidOptions returns a string with the valid options.
+func FormatValidOptions(options []string) string {
+    return "valid options: [" + strings.Join(options, ", ") + "]. "
+}

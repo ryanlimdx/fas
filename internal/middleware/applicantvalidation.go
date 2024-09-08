@@ -2,13 +2,13 @@
 package middleware
 
 import (
-    "bytes"
+	"bytes"
 	"encoding/json"
-    "io"
+	"io"
 	"net/http"
 
 	"fas/internal/models"
-    "fas/internal/utils"
+	"fas/internal/utils"
 )
 
 var (
@@ -36,34 +36,41 @@ func ValidateApplicant(next http.Handler) http.Handler {
 
 		// Validate the applicant
         if !utils.IsValid(validEmploymentStatus, applicant.EmploymentStatus) {
-            http.Error(w, "Invalid employment status", http.StatusBadRequest)
+            http.Error(w, "Invalid employment status, " + 
+                utils.FormatValidOptions(validEmploymentStatus), http.StatusBadRequest)
             return
         }
         if !utils.IsValid(validMaritalStatus, applicant.MaritalStatus) {
-            http.Error(w, "Invalid marital status", http.StatusBadRequest)
+            http.Error(w, "Invalid marital status, " + 
+                utils.FormatValidOptions(validMaritalStatus), http.StatusBadRequest)
             return
         }
         if !utils.IsValid(validSex, applicant.Sex) {
-            http.Error(w, "Invalid applicant sex", http.StatusBadRequest)
+            http.Error(w, "Invalid applicant sex, " + 
+                utils.FormatValidOptions(validSex), http.StatusBadRequest)
             return
         }
 
         // Validate household member(s)
         for _, member := range applicant.Household {
             if !utils.IsValid(validRelationships, member.Relationship) {
-                http.Error(w, "Invalid household member relationship", http.StatusBadRequest)
+                http.Error(w, "Invalid household member relationship, " + 
+                    utils.FormatValidOptions(validRelationships), http.StatusBadRequest)
                 return
             }
             if !utils.IsValid(validSchoolLevels, member.SchoolLevel) {
-                http.Error(w, "Invalid household member school level", http.StatusBadRequest)
+                http.Error(w, "Invalid household member school level, " + 
+                    utils.FormatValidOptions(validSchoolLevels), http.StatusBadRequest)
                 return
             }
 			if !utils.IsValid(validEmploymentStatus, member.EmploymentStatus) {
-                http.Error(w, "Invalid household member employment status", http.StatusBadRequest)
+                http.Error(w, "Invalid household member employment status, " + 
+                    utils.FormatValidOptions(validEmploymentStatus), http.StatusBadRequest)
                 return
             }
 			if !utils.IsValid(validSex, applicant.Sex) {
-				http.Error(w, "Invalid household member sex", http.StatusBadRequest)
+				http.Error(w, "Invalid household member sex, " + 
+                    utils.FormatValidOptions(validSex), http.StatusBadRequest)
 				return
 			}
         }

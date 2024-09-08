@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	
+
 	"fas/internal/models"
 	"fas/internal/utils"
 )
@@ -38,11 +38,14 @@ func ValidateScheme(next http.Handler) http.Handler {
 		// Validate scheme criteria
 		for _, criteria := range scheme.Criteria {
             if !utils.IsValid(validCriteriaLevels, criteria.CriteriaLevel) {
-                http.Error(w, "Invalid criteria level", http.StatusBadRequest)
+                http.Error(w, "Invalid criteria level, " + 
+					utils.FormatValidOptions(validCriteriaLevels), http.StatusBadRequest)
                 return
             }
 			if !utils.IsValid(validCriteriaTypes, criteria.CriteriaType) {
-                http.Error(w, "Invalid criteria type", http.StatusBadRequest)
+                http.Error(w, "Invalid criteria type, " +
+					utils.FormatValidOptions(validCriteriaTypes) +
+					"However, note that the criteria types should be dependent on the criteria levels as well.", http.StatusBadRequest)
                 return
             }
 		}
@@ -50,7 +53,7 @@ func ValidateScheme(next http.Handler) http.Handler {
 		// Validate scheme benefits
 		for _, benefit := range scheme.Benefits {
 			if benefit.Amount < 0 {
-				http.Error(w, "Invalid benefit amount", http.StatusBadRequest)
+				http.Error(w, "Invalid benefit amount. Amount should be more than or equal to 0.00.", http.StatusBadRequest)
 				return
 			}
 		}
