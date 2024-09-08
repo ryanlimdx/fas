@@ -4,13 +4,14 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"fas/internal/models"
-	"fas/internal/utils"
 	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+
+    "fas/internal/models"
+	"fas/internal/utils"
 )
 
 // CreateScheme creates a new scheme in the database.

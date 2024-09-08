@@ -4,10 +4,11 @@ package utils
 import (
     "fmt"
 	"strings"
+
     "github.com/google/uuid"
 )
 
-// Helper function to check if an existing value is valid.
+// IsValid checks if an existing value is valid.
 func IsValid(validVals []string, value string) bool {
     for _, item := range validVals {
         if strings.EqualFold(item, value) {
@@ -16,7 +17,6 @@ func IsValid(validVals []string, value string) bool {
     }
     return false
 }
-
 
 // ValidateUUID checks if the provided string is a valid UUID and not empty.
 func ValidateUUID(id string) (error) {
