@@ -28,7 +28,9 @@ func main() {
 	}).Methods(http.MethodPost)
 	r.HandleFunc("/api/applicants", handlers.GetApplicants(db)).Methods(http.MethodGet)
 	
-	r.HandleFunc("/api/schemes", handlers.CreateScheme(db)).Methods(http.MethodPost)
+	r.HandleFunc("/api/schemes", func(w http.ResponseWriter, r *http.Request) {
+		middleware.ValidateScheme(handlers.CreateScheme(db)).ServeHTTP(w, r)
+	}).Methods(http.MethodPost)
 	r.HandleFunc("/api/schemes", handlers.GetSchemes(db)).Methods(http.MethodGet)
 	
 	r.HandleFunc("/api/applications", handlers.CreateApplication(db)).Methods(http.MethodPost)
