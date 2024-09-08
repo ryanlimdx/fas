@@ -383,6 +383,12 @@ func UpdateScheme(db *sql.DB) http.HandlerFunc {
             }
         }
 
+        // Commit the transaction
+        if err = tx.Commit(); err != nil {
+            http.Error(w, "Failed to commit", http.StatusInternalServerError)
+            return
+        }
+
         // Cleanup orphaned benefits and criteria
         if err := deleteOrphanedBenefits(db); err != nil {
             http.Error(w, "Failed to delete unused benefits", http.StatusInternalServerError)
@@ -390,12 +396,6 @@ func UpdateScheme(db *sql.DB) http.HandlerFunc {
         }
         if err := deleteOrphanedCriteria(db); err != nil {
             http.Error(w, "Failed to delete unused criteria", http.StatusInternalServerError)
-            return
-        }
-
-        // Commit the transaction
-        if err = tx.Commit(); err != nil {
-            http.Error(w, "Failed to commit", http.StatusInternalServerError)
             return
         }
 
