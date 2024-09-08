@@ -42,9 +42,11 @@ func CreateApplicant(db *sql.DB) http.HandlerFunc {
 		}
 
 		// Insert household members (if any)
-		for _, member := range applicant.Household {
-			fmt.Println("Inserting household member:", member)
+		for i := range applicant.Household {
+			member := &applicant.Household[i]
+			fmt.Println("Inserting household member:", *member)
 			member.ID = uuid.New().String()
+			member.ApplicantID = applicant.ID
 			_, err = tx.Exec(`INSERT INTO household (id, applicant_id, name, relationship, sex, school_level, employment_status, date_of_birth) 
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 				member.ID, applicant.ID, member.Name, member.Relationship, member.Sex, member.SchoolLevel, member.EmploymentStatus, member.DateOfBirth)
@@ -192,7 +194,8 @@ func UpdateApplicant(db *sql.DB) http.HandlerFunc {
         }
 
         // Insert new household members (if provided)
-        for _, member := range applicant.Household {
+        for i := range applicant.Household {
+			member := &applicant.Household[i]
             member.ID = uuid.New().String()
             _, err = tx.Exec(`INSERT INTO household (id, applicant_id, name, relationship, sex, school_level, employment_status, date_of_birth) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                 member.ID, applicantID, member.Name, member.Relationship, member.Sex, member.SchoolLevel, member.EmploymentStatus, member.DateOfBirth)
@@ -208,7 +211,7 @@ func UpdateApplicant(db *sql.DB) http.HandlerFunc {
             return
         }
 
-        w.WriteHeader(http.StatusNoContent)  // 204 No Content for successful PUT
+        w.WriteHeader(http.StatusNoContent)
     }
 }
 
