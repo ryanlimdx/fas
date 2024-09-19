@@ -25,24 +25,15 @@ func main() {
 	r := mux.NewRouter()
 	
 	// Routes (API Endpoints)
-
 	// Applicants
-	r.HandleFunc("/api/applicants", func(w http.ResponseWriter, r *http.Request) {
-		middleware.ValidateApplicant(handlers.CreateApplicant(db)).ServeHTTP(w, r)
-	}).Methods(http.MethodPost)
-	r.HandleFunc("/api/applicants/{id}", func(w http.ResponseWriter, r *http.Request) {
-		middleware.ValidateApplicant(handlers.UpdateApplicant(db)).ServeHTTP(w, r)
-	}).Methods(http.MethodPut)
+	r.Handle("/api/applicants", middleware.ValidateApplicant(handlers.CreateApplicant(db))).Methods(http.MethodPost)
+	r.Handle("/api/applicants/{id}", middleware.ValidateApplicant(handlers.UpdateApplicant(db))).Methods(http.MethodPut)
 	r.HandleFunc("/api/applicants", handlers.GetApplicants(db)).Methods(http.MethodGet)
 	r.HandleFunc("/api/applicants/{id}", handlers.DeleteApplicant(db)).Methods(http.MethodDelete)
 	
 	// Schemes
-	r.HandleFunc("/api/schemes", func(w http.ResponseWriter, r *http.Request) {
-		middleware.ValidateScheme(handlers.CreateScheme(db)).ServeHTTP(w, r)
-	}).Methods(http.MethodPost)
-	r.HandleFunc("/api/schemes/{id}", func(w http.ResponseWriter, r *http.Request) {
-		middleware.ValidateScheme(handlers.UpdateScheme(db)).ServeHTTP(w, r)
-	}).Methods(http.MethodPut)
+	r.Handle("/api/schemes", middleware.ValidateScheme(handlers.CreateScheme(db))).Methods(http.MethodPost)
+	r.Handle("/api/schemes/{id}", middleware.ValidateScheme(handlers.UpdateScheme(db))).Methods(http.MethodPut)
 	r.HandleFunc("/api/schemes", handlers.GetSchemes(db)).Methods(http.MethodGet)
 	r.HandleFunc("/api/schemes/eligible", handlers.GetEligibleSchemes(db)).Methods(http.MethodGet)
 	r.HandleFunc("/api/schemes/{id}", handlers.DeleteScheme(db)).Methods(http.MethodDelete)

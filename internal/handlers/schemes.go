@@ -158,7 +158,9 @@ func fetchEligibleSchemes(db *sql.DB, applicantID string) ([]models.Scheme, erro
             )
             OR (c.criteria_level = 'household' AND c.criteria_type = 'school_level' AND h.school_level = c.status)
             OR (c.criteria_level = 'household' AND c.criteria_type = 'employment_status' AND h.employment_status = c.status)
-        )
+            
+            
+        ) 
         GROUP BY sc.scheme_id
         HAVING COUNT(DISTINCT c.id) = (
             SELECT COUNT(*) FROM scheme_criteria WHERE scheme_id = sc.scheme_id
@@ -167,7 +169,7 @@ func fetchEligibleSchemes(db *sql.DB, applicantID string) ([]models.Scheme, erro
     WHERE eligible_schemes.scheme_id IS NOT NULL OR NOT EXISTS (
         SELECT 1 FROM scheme_criteria WHERE scheme_id = s.id
     )
-	`
+  `
 	rows, err := db.Query(query, applicantID)
     if err != nil {
         return nil, err
